@@ -4,11 +4,16 @@ const commissionRate = document.querySelector('#commissionRate');
 const brokerRate = document.querySelector('#brokerRate');
 const salespersonRate = document.querySelector('#salespersonRate');
 const referralRate = document.querySelector('#referralRate');
-const fixedCompanyRate = 0.5;
+const fixedCompanyRate = 10;
+const minReferralRate = 20;
+const maxReferralRate = 40;
+const minSalespersonRate = 50;
+const maxSalespersonRate = 70;
 const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 });
 
 const money = value => formatter.format(Math.max(0, Number(value) || 0));
 const number = element => Math.max(0, Number(element.value) || 0);
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 function getRateValues() {
   return {
@@ -34,7 +39,7 @@ function updateDisplay() {
   const rates = getRateValues();
   const company = fixedCompanyRate;
   const allocationPercent = rates.broker + rates.salesperson + rates.referral + company;
-  const difference = poolPercent - allocationPercent;
+  const difference = 100 - allocationPercent;
 
   document.querySelector('#serviceFee').textContent = money(totalServiceFee);
   document.querySelector('#serviceFeeCaption').textContent = `${markup}% + ${poolPercent}% commission on ${money(price)}`;
@@ -43,45 +48,44 @@ function updateDisplay() {
   document.querySelector('#poolResult').textContent = money(pool);
   document.querySelector('#poolDisplay').textContent = money(pool);
   document.querySelector('#poolPercentDisplay').textContent = `${poolPercent}% of property price`;
-  document.querySelector('#brokerAmount').textContent = money(price * rates.broker / 100);
-  document.querySelector('#salespersonAmount').textContent = money(price * rates.salesperson / 100);
-  document.querySelector('#referralAmount').textContent = money(price * rates.referral / 100);
-  document.querySelector('#companyAmount').textContent = money(price * company / 100);
-  document.querySelector('#allocationTotal').textContent = money(price * allocationPercent / 100);
+  document.querySelector('#brokerAmount').textContent = money(pool * rates.broker / 100);
+  document.querySelector('#salespersonAmount').textContent = money(pool * rates.salesperson / 100);
+  document.querySelector('#referralAmount').textContent = money(pool * rates.referral / 100);
+  document.querySelector('#companyAmount').textContent = money(pool * company / 100);
+  document.querySelector('#allocationTotal').textContent = money(pool * allocationPercent / 100);
 
   const status = document.querySelector('#allocationStatus');
   const message = document.querySelector('#validationMessage');
-  const isValid = Math.abs(difference) < 0.001 && poolPercent >= fixedCompanyRate;
+  const isValid = Math.abs(difference) < 0.001;
 
   status.textContent = isValid ? '✓ Fully allocated' : '• Needs rebalancing';
   status.classList.toggle('invalid', !isValid);
-  message.textContent = isValid ? '' : `Allocation is ${money(price * Math.abs(difference) / 100)} ${difference > 0 ? 'short' : 'over'} the ${poolPercent}% commission pool.`;
+  message.textContent = isValid ? '' : `Allocation is ${money(pool * Math.abs(difference) / 100)} ${difference > 0 ? 'short' : 'over'} the full commission pool.`;
 }
 
 function rebalance(changedLevel) {
-  const poolPercent = number(commissionRate);
-  const editablePercent = Math.max(0, poolPercent - fixedCompanyRate);
   const rates = getRateValues();
+  const remainingPercent = 100 - fixedCompanyRate;
 
   if (changedLevel === 'referral') {
-    const referral = Math.max(0, Math.min(rates.referral, editablePercent));
-    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent - referral));
-    const broker = Math.max(0, editablePercent - referral - salesperson);
+    const referral = clamp(rates.referral, minReferralRate, maxReferralRate);
+    const salesperson = clamp(Math.min(maxSalespersonRate, remainingPercent - referral), minSalespersonRate, maxSalespersonRate);
+    const broker = Math.max(0, remainingPercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'salesperson') {
-    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent));
-    const broker = Math.max(0, Math.min(rates.broker, editablePercent - salesperson));
-    const referral = Math.max(0, editablePercent - salesperson - broker);
+    const salesperson = clamp(rates.salesperson, minSalespersonRate, maxSalespersonRate);
+    const referral = clamp(Math.max(minReferralRate, remainingPercent - salesperson), minReferralRate, maxReferralRate);
+    const broker = Math.max(0, remainingPercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'broker') {
-    const broker = Math.max(0, Math.min(rates.broker, editablePercent));
-    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent - broker));
-    const referral = Math.max(0, editablePercent - broker - salesperson);
+    const broker = Math.max(0, rates.broker);
+    const salesperson = clamp(Math.max(minSalespersonRate, Math.min(maxSalespersonRate, remainingPercent - broker - rates.referral)), minSalespersonRate, maxSalespersonRate);
+    const referral = clamp(Math.max(minReferralRate, remainingPercent - broker - salesperson), minReferralRate, maxReferralRate);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'pool') {
-    const broker = rates.broker;
-    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent - broker));
-    const referral = Math.max(0, editablePercent - broker - salesperson);
+    const referral = clamp(rates.referral, minReferralRate, maxReferralRate);
+    const salesperson = clamp(Math.max(minSalespersonRate, Math.min(maxSalespersonRate, remainingPercent - referral)), minSalespersonRate, maxSalespersonRate);
+    const broker = Math.max(0, remainingPercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   }
 
@@ -98,9 +102,9 @@ document.querySelector('#resetButton').addEventListener('click', () => {
   propertyPrice.value = 5000000;
   markupRate.value = 21;
   commissionRate.value = 5;
-  brokerRate.value = 1;
-  salespersonRate.value = 2.5;
-  referralRate.value = 1;
+  brokerRate.value = 0;
+  salespersonRate.value = 60;
+  referralRate.value = 30;
   updateDisplay();
 });
 
