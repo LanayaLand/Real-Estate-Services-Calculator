@@ -43,7 +43,7 @@ function updateDisplay() {
   const companyAmount = pool * companyShareOfPool / 100;
 
   document.querySelector('#serviceFee').textContent = money(totalServiceFee);
-  document.querySelector('#serviceFeeCaption').textContent = `${markup}% + ${poolPercent}% commission on ${money(price)}`;
+  document.querySelector('#serviceFeeCaption').textContent = `${markup}% on ${money(price)} (commission included)`;
   document.querySelector('#propertyPriceResult').textContent = money(price);
   document.querySelector('#markupResult').textContent = `${markup}%`;
   document.querySelector('#poolResult').textContent = money(pool);
