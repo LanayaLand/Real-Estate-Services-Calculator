@@ -5,10 +5,10 @@ const brokerRate = document.querySelector('#brokerRate');
 const salespersonRate = document.querySelector('#salespersonRate');
 const referralRate = document.querySelector('#referralRate');
 const fixedCompanyRate = 10;
-const minBrokerRate = 10;
-const minReferralRate = 20;
+const minBrokerRate = 20;
+const minReferralRate = 0;
 const maxReferralRate = 40;
-const minSalespersonRate = 50;
+const minSalespersonRate = 30;
 const maxSalespersonRate = 70;
 const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 });
 
@@ -103,9 +103,9 @@ document.querySelector('#resetButton').addEventListener('click', () => {
   propertyPrice.value = 5000000;
   markupRate.value = 21;
   commissionRate.value = 5;
-  brokerRate.value = 0;
-  salespersonRate.value = 60;
-  referralRate.value = 30;
+  brokerRate.value = 35;
+  salespersonRate.value = 65;
+  referralRate.value = 0;
   updateDisplay();
 });
 
