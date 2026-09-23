@@ -6,10 +6,11 @@ const salespersonRate = document.querySelector('#salespersonRate');
 const referralRate = document.querySelector('#referralRate');
 const fixedCompanyRate = 10;
 const minBrokerRate = 20;
+const maxBrokerRate = 40;
 const minReferralRate = 0;
 const maxReferralRate = 40;
-const minSalespersonRate = 30;
-const maxSalespersonRate = 70;
+const minSalespersonRate = 45;
+const maxSalespersonRate = 75;
 const formatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 });
 
 const money = value => formatter.format(Math.max(0, Number(value) || 0));
@@ -69,12 +70,12 @@ function rebalance(changedLevel) {
   const companyShare = fixedCompanyRate;
   const workingPool = 100 - companyShare;
 
-  let broker = clamp(current.broker, minBrokerRate, workingPool);
+  let broker = clamp(current.broker, minBrokerRate, maxBrokerRate);
   let salesperson = clamp(current.salesperson, minSalespersonRate, maxSalespersonRate);
   let referral = clamp(current.referral, minReferralRate, maxReferralRate);
 
   if (changedLevel === 'broker') {
-    const targetBroker = clamp(number(brokerRate), minBrokerRate, workingPool);
+    const targetBroker = clamp(number(brokerRate), minBrokerRate, maxBrokerRate);
     const delta = targetBroker - current.broker;
     broker = targetBroker;
     salesperson = clamp(current.salesperson - delta / 2, minSalespersonRate, maxSalespersonRate);
@@ -83,21 +84,21 @@ function rebalance(changedLevel) {
     const targetSalesperson = clamp(number(salespersonRate), minSalespersonRate, maxSalespersonRate);
     const delta = targetSalesperson - current.salesperson;
     salesperson = targetSalesperson;
-    broker = clamp(current.broker - delta, minBrokerRate, workingPool);
+    broker = clamp(current.broker - delta, minBrokerRate, maxBrokerRate);
   } else if (changedLevel === 'referral') {
     const targetReferral = clamp(number(referralRate), minReferralRate, maxReferralRate);
     const delta = targetReferral - current.referral;
     referral = targetReferral;
     salesperson = clamp(current.salesperson - delta, minSalespersonRate, maxSalespersonRate);
   } else if (changedLevel === 'pool') {
-    const targetBroker = clamp(current.broker, minBrokerRate, workingPool);
+    const targetBroker = clamp(current.broker, minBrokerRate, maxBrokerRate);
     const targetSalesperson = clamp(current.salesperson, minSalespersonRate, maxSalespersonRate);
     const targetReferral = clamp(current.referral, minReferralRate, maxReferralRate);
     const total = targetBroker + targetSalesperson + targetReferral;
     const delta = total - workingPool;
     salesperson = clamp(targetSalesperson - delta / 2, minSalespersonRate, maxSalespersonRate);
     referral = clamp(targetReferral - delta / 2, minReferralRate, maxReferralRate);
-    broker = clamp(targetBroker, minBrokerRate, workingPool);
+    broker = clamp(targetBroker, minBrokerRate, maxBrokerRate);
   }
 
   const total = broker + salesperson + referral;
@@ -106,7 +107,7 @@ function rebalance(changedLevel) {
     if (changedLevel === 'referral') {
       salesperson = clamp(salesperson + difference, minSalespersonRate, maxSalespersonRate);
     } else if (changedLevel === 'salesperson') {
-      broker = clamp(broker + difference, minBrokerRate, workingPool);
+      broker = clamp(broker + difference, minBrokerRate, maxBrokerRate);
     } else {
       salesperson = clamp(salesperson + difference / 2, minSalespersonRate, maxSalespersonRate);
       referral = clamp(referral + difference / 2, minReferralRate, maxReferralRate);
@@ -128,7 +129,7 @@ document.querySelector('#resetButton').addEventListener('click', () => {
   markupRate.value = 21;
   commissionRate.value = 5;
   brokerRate.value = 35;
-  salespersonRate.value = 65;
+  salespersonRate.value = 55;
   referralRate.value = 0;
   updateDisplay();
 });
