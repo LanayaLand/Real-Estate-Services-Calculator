@@ -62,24 +62,24 @@ function rebalance(changedLevel) {
   const editablePercent = Math.max(0, poolPercent - fixedCompanyRate);
   const rates = getRateValues();
 
-  if (changedLevel === 'broker') {
-    const broker = Math.min(rates.broker, editablePercent);
-    const salesperson = Math.max(0, editablePercent - broker - rates.referral);
-    const referral = Math.max(0, editablePercent - broker - salesperson);
+  if (changedLevel === 'referral') {
+    const referral = Math.max(0, Math.min(rates.referral, editablePercent));
+    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent - referral));
+    const broker = Math.max(0, editablePercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'salesperson') {
-    const salesperson = Math.min(rates.salesperson, editablePercent);
-    const broker = Math.max(0, editablePercent - salesperson - rates.referral);
-    const referral = Math.max(0, editablePercent - broker - salesperson);
+    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent));
+    const broker = Math.max(0, Math.min(rates.broker, editablePercent - salesperson));
+    const referral = Math.max(0, editablePercent - salesperson - broker);
     setRateValues({ broker, salesperson, referral });
-  } else if (changedLevel === 'referral') {
-    const referral = Math.min(rates.referral, editablePercent);
-    const salesperson = Math.max(0, editablePercent - rates.broker - referral);
-    const broker = Math.max(0, editablePercent - salesperson - referral);
+  } else if (changedLevel === 'broker') {
+    const broker = Math.max(0, Math.min(rates.broker, editablePercent));
+    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent - broker));
+    const referral = Math.max(0, editablePercent - broker - salesperson);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'pool') {
     const broker = rates.broker;
-    const salesperson = Math.min(rates.salesperson, Math.max(0, editablePercent - broker));
+    const salesperson = Math.max(0, Math.min(rates.salesperson, editablePercent - broker));
     const referral = Math.max(0, editablePercent - broker - salesperson);
     setRateValues({ broker, salesperson, referral });
   }
