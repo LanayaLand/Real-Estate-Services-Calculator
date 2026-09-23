@@ -56,6 +56,7 @@ function updateDisplay() {
   const markup = number(markupRate);
   const poolPercent = number(commissionRate);
   const serviceFee = price * markup / 100;
+  const totalSellingPrice = price + serviceFee;
   const pool = price * poolPercent / 100;
   const rates = getRateValues();
   const companyShareOfPool = fixedCompanyRate;
@@ -66,7 +67,7 @@ function updateDisplay() {
   document.querySelector('#serviceFee').textContent = money(serviceFee);
   document.querySelector('#serviceFeeCaption').textContent = `${markup}% on ${money(price)} (commission + other fees included)`;
   document.querySelector('#propertyPriceResult').textContent = money(price);
-  document.querySelector('#sellingPriceResult').textContent = money(price + serviceFee);
+  document.querySelector('#totalSellingPrice').textContent = money(totalSellingPrice);
   document.querySelector('#markupResult').textContent = `${markup}%`;
   document.querySelector('#poolResult').textContent = money(pool);
   document.querySelector('#poolDisplay').textContent = money(pool);
