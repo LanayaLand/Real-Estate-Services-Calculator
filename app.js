@@ -79,7 +79,7 @@ function rebalance(changedLevel) {
     const broker = Math.max(minBrokerRate, remainingPercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'broker') {
-    const broker = Math.max(minBrokerRate, rates.broker);
+    const broker = Math.max(minBrokerRate, Number(rates.broker));
     const salesperson = clamp(Math.max(minSalespersonRate, Math.min(maxSalespersonRate, remainingPercent - broker - rates.referral)), minSalespersonRate, maxSalespersonRate);
     const referral = clamp(Math.max(minReferralRate, remainingPercent - broker - salesperson), minReferralRate, maxReferralRate);
     setRateValues({ broker, salesperson, referral });
