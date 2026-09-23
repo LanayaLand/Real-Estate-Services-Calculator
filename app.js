@@ -5,6 +5,7 @@ const brokerRate = document.querySelector('#brokerRate');
 const salespersonRate = document.querySelector('#salespersonRate');
 const referralRate = document.querySelector('#referralRate');
 const fixedCompanyRate = 10;
+const minBrokerRate = 10;
 const minReferralRate = 20;
 const maxReferralRate = 40;
 const minSalespersonRate = 50;
@@ -70,22 +71,22 @@ function rebalance(changedLevel) {
   if (changedLevel === 'referral') {
     const referral = clamp(rates.referral, minReferralRate, maxReferralRate);
     const salesperson = clamp(Math.min(maxSalespersonRate, remainingPercent - referral), minSalespersonRate, maxSalespersonRate);
-    const broker = Math.max(0, remainingPercent - referral - salesperson);
+    const broker = Math.max(minBrokerRate, remainingPercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'salesperson') {
     const salesperson = clamp(rates.salesperson, minSalespersonRate, maxSalespersonRate);
     const referral = clamp(Math.max(minReferralRate, remainingPercent - salesperson), minReferralRate, maxReferralRate);
-    const broker = Math.max(0, remainingPercent - referral - salesperson);
+    const broker = Math.max(minBrokerRate, remainingPercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'broker') {
-    const broker = Math.max(0, rates.broker);
+    const broker = Math.max(minBrokerRate, rates.broker);
     const salesperson = clamp(Math.max(minSalespersonRate, Math.min(maxSalespersonRate, remainingPercent - broker - rates.referral)), minSalespersonRate, maxSalespersonRate);
     const referral = clamp(Math.max(minReferralRate, remainingPercent - broker - salesperson), minReferralRate, maxReferralRate);
     setRateValues({ broker, salesperson, referral });
   } else if (changedLevel === 'pool') {
     const referral = clamp(rates.referral, minReferralRate, maxReferralRate);
     const salesperson = clamp(Math.max(minSalespersonRate, Math.min(maxSalespersonRate, remainingPercent - referral)), minSalespersonRate, maxSalespersonRate);
-    const broker = Math.max(0, remainingPercent - referral - salesperson);
+    const broker = Math.max(minBrokerRate, remainingPercent - referral - salesperson);
     setRateValues({ broker, salesperson, referral });
   }
 
