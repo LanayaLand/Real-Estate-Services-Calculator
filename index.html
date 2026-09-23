@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Real Estate Markup Calculator</title>
+<style>
+  :root{
+    --bg:#f6f5f2; --card:#ffffff; --ink:#1f2320; --muted:#6b7169;
+    --accent:#2f6b4f; --accent-ink:#ffffff; --line:#e4e1da; --hi:#eef5f0;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14171a; --card:#1e2226; --ink:#eef0ee; --muted:#9aa39b;
+      --accent:#4fa07a; --accent-ink:#0e1210; --line:#2c3136; --hi:#1c2620;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171a; --card:#1e2226; --ink:#eef0ee; --muted:#9aa39b;
+    --accent:#4fa07a; --accent-ink:#0e1210; --line:#2c3136; --hi:#1c2620;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; justify-content:center; padding:24px 14px 40px;
+  }
+  .wrap{width:100%; max-width:460px;}
+  h1{font-size:1.25rem; margin:0 0 4px;}
+  p.sub{color:var(--muted); margin:0 0 20px; font-size:0.9rem;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:18px; margin-bottom:16px;
+  }
+  label{display:block; font-size:0.82rem; color:var(--muted); margin-bottom:6px; font-weight:600;}
+  input[type=number]{
+    width:100%; padding:12px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--bg); color:var(--ink); font-size:1.05rem; margin-bottom:14px;
+  }
+  input[type=number]:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .toggle-row{display:flex; gap:8px; margin-bottom:14px;}
+  .toggle-btn{
+    flex:1; padding:10px 6px; border-radius:10px; border:1px solid var(--line);
+    background:var(--bg); color:var(--ink); font-size:0.95rem; font-weight:600;
+    cursor:pointer;
+  }
+  .toggle-btn.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .custom-row{display:flex; align-items:center; gap:8px;}
+  .custom-row input{margin-bottom:0;}
+  .result-line{
+    display:flex; justify-content:space-between; padding:9px 0;
+    border-bottom:1px solid var(--line); font-size:0.95rem;
+  }
+  .result-line:last-child{border-bottom:none;}
+  .result-line .label{color:var(--muted);}
+  .result-line.total{
+    margin-top:6px; padding-top:14px; border-top:2px solid var(--line);
+    border-bottom:none; font-size:1.15rem; font-weight:700;
+  }
+  .result-line.total .label{color:var(--ink); font-weight:700;}
+  .badge{
+    display:inline-block; background:var(--hi); color:var(--accent);
+    padding:2px 9px; border-radius:20px; font-size:0.75rem; font-weight:700;
+    margin-left:6px;
+  }
+  .note{font-size:0.78rem; color:var(--muted); margin-top:10px; line-height:1.4;}
+  .comm-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .comm-label{font-size:0.9rem; color:var(--ink);}
+  .comm-label .range{display:block; font-size:0.75rem; color:var(--muted); font-weight:400;}
+  .comm-row input{width:78px; margin-bottom:0; padding:8px 8px; text-align:right;}
+  .comm-row input:disabled{opacity:0.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Real Estate Markup Calculator</h1>
+  <p class="sub">Base price + markup (fees &amp; company services) → client price</p>
+
+  <div class="card">
+    <label for="base">Base price / cost (property or service)</label>
+    <input type="number" id="base" placeholder="e.g. 5,000,000" min="0" step="any">
+
+    <label>Markup rate</label>
+    <div class="toggle-row" id="toggleRow">
+      <button class="toggle-btn active" data-rate="21">21%</button>
+      <button class="toggle-btn" data-rate="23">23%</button>
+      <button class="toggle-btn" data-rate="custom">Custom</button>
+    </div>
+    <div class="custom-row" id="customRow" style="display:none;">
+      <input type="number" id="customRate" placeholder="Custom %" min="0" step="any">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="result-line">
+      <span class="label">Base price</span>
+      <span id="outBase">$0.00</span>
+    </div>
+    <div class="result-line">
+      <span class="label">Markup amount <span class="badge" id="rateBadge">21%</span></span>
+      <span id="outMarkup">$0.00</span>
+    </div>
+    <div class="result-line total">
+      <span class="label">Client / list price</span>
+      <span id="outTotal">$0.00</span>
+    </div>
+    <div class="note">Markup is calculated on the base price and represents combined real estate fees and company service charges. Adjust the rate above for non-standard deals.</div>
+  </div>
+
+  <div class="card">
+    <label style="margin-bottom:12px;">Commission breakdown (% of base price)</label>
+
+    <div class="comm-row">
+      <div class="comm-label">Total commission <span class="range">standard 5%</span></div>
+      <input type="number" id="rTotal" min="0" step="0.1" value="5">
+    </div>
+    <div class="comm-row">
+      <div class="comm-label">Referral <span class="range">1–2%</span></div>
+      <input type="number" id="rReferral" min="1" max="2" step="0.1" value="1.5">
+    </div>
+    <div class="comm-row">
+      <div class="comm-label">Salesperson <span class="range">2–3.5%</span></div>
+      <input type="number" id="rSales" min="2" max="3.5" step="0.1" value="2.75">
+    </div>
+    <div class="comm-row">
+      <div class="comm-label">Broker <span class="range">auto · 1–2% standard</span></div>
+      <input type="number" id="rBroker" value="1.5" disabled>
+    </div>
+    <div class="comm-row">
+      <div class="comm-label">Company (fixed) <span class="range">0.5%</span></div>
+      <input type="number" id="rCompany" value="0.5" disabled>
+    </div>
+
+    <div class="result-line" style="margin-top:10px;">
+      <span class="label">Total commission pool</span>
+      <span id="outTotalPool">₱0.00</span>
+    </div>
+    <div class="result-line">
+      <span class="label">Referral amount</span>
+      <span id="outReferral">₱0.00</span>
+    </div>
+    <div class="result-line">
+      <span class="label">Salesperson amount</span>
+      <span id="outSales">₱0.00</span>
+    </div>
+    <div class="result-line">
+      <span class="label">Broker amount</span>
+      <span id="outBroker">₱0.00</span>
+    </div>
+    <div class="result-line">
+      <span class="label">Company amount</span>
+      <span id="outCompany">₱0.00</span>
+    </div>
+    <div class="result-line total">
+      <span class="label">Total commissions (sellers)</span>
+      <span id="outCommTotal">₱0.00</span>
+    </div>
+    <div class="result-line" id="remainRow">
+      <span class="label">Balance check (should be ₱0)</span>
+      <span id="outRemain">₱0.00</span>
+    </div>
+    <div class="note" id="warnNote" style="display:none; color:#c0392b; font-weight:600;"></div>
+    <div class="note">Total commission defaults to the standard 5% of base price. Referral and Salesperson are set within their ranges; Broker automatically absorbs whatever remains after Referral, Salesperson, and the fixed 0.5% company share are taken out — so the four always add up exactly to the total commission.</div>
+  </div>
+</div>
+
+<script>
+  const baseInput = document.getElementById('base');
+  const customRow = document.getElementById('customRow');
+  const customRate = document.getElementById('customRate');
+  const buttons = document.querySelectorAll('.toggle-btn');
+  const outBase = document.getElementById('outBase');
+  const outMarkup = document.getElementById('outMarkup');
+  const outTotal = document.getElementById('outTotal');
+  const rateBadge = document.getElementById('rateBadge');
+
+  const rTotal = document.getElementById('rTotal');
+  const rReferral = document.getElementById('rReferral');
+  const rSales = document.getElementById('rSales');
+  const rBroker = document.getElementById('rBroker');
+  const outReferral = document.getElementById('outReferral');
+  const outTotalPool = document.getElementById('outTotalPool');
+  const outSales = document.getElementById('outSales');
+  const outBroker = document.getElementById('outBroker');
+  const outCompany = document.getElementById('outCompany');
+  const outCommTotal = document.getElementById('outCommTotal');
+  const outRemain = document.getElementById('outRemain');
+  const warnNote = document.getElementById('warnNote');
+  const BROKER_MIN = 1, BROKER_MAX = 2;
+  const COMPANY_FIXED = 0.5;
+
+  function fmt(n){
+    if(!isFinite(n)) n = 0;
+    return n.toLocaleString('en-PH', {style:'currency', currency:'PHP', maximumFractionDigits:2});
+  }
+
+  function clamp(input){
+    let v = parseFloat(input.value);
+    const min = parseFloat(input.min), max = parseFloat(input.max);
+    if(!isFinite(v)) v = min;
+    if(v < min) v = min;
+    if(v > max) v = max;
+    input.value = v;
+    return v;
+  }
+
+  function activeRate(){
+    const activeBtn = document.querySelector('.toggle-btn.active');
+    if(activeBtn.dataset.rate === 'custom'){
+      const v = parseFloat(customRate.value);
+      return isFinite(v) ? v : 0;
+    }
+    return parseFloat(activeBtn.dataset.rate);
+  }
+
+  function recalc(){
+    const base = parseFloat(baseInput.value) || 0;
+    const rate = activeRate();
+    const markup = base * (rate/100);
+    const total = base + markup;
+    outBase.textContent = fmt(base);
+    outMarkup.textContent = fmt(markup);
+    outTotal.textContent = fmt(total);
+    rateBadge.textContent = rate + '%';
+
+    const pTotal = parseFloat(rTotal.value) || 0;
+    const pReferral = parseFloat(rReferral.value) || 0;
+    const pSales = parseFloat(rSales.value) || 0;
+    const pCompany = COMPANY_FIXED;
+    const pBroker = pTotal - pReferral - pSales - pCompany;
+    rBroker.value = pBroker.toFixed(2);
+
+    const aTotal = base * (pTotal/100);
+    const aReferral = base * (pReferral/100);
+    const aSales = base * (pSales/100);
+    const aBroker = base * (pBroker/100);
+    const aCompany = base * (pCompany/100);
+    const sellersTotal = aReferral + aSales + aBroker;
+    const commTotal = sellersTotal + aCompany;
+    const remain = aTotal - commTotal;
+
+    outReferral.textContent = fmt(aReferral);
+    outTotalPool.textContent = fmt(aTotal);
+    outSales.textContent = fmt(aSales);
+    outBroker.textContent = fmt(aBroker);
+    outCompany.textContent = fmt(aCompany);
+    outCommTotal.textContent = fmt(commTotal);
+    outRemain.textContent = fmt(remain);
+    outRemain.style.color = Math.abs(remain) > 0.01 ? '#c0392b' : '';
+
+    if(pBroker < BROKER_MIN || pBroker > BROKER_MAX){
+      warnNote.style.display = 'block';
+      warnNote.textContent = `Heads up: with these settings, Broker works out to ${pBroker.toFixed(2)}%, outside its standard 1–2% range. Adjust Total, Referral, or Salesperson to bring it back in range.`;
+      rBroker.style.color = '#c0392b';
+    } else {
+      warnNote.style.display = 'none';
+      rBroker.style.color = '';
+    }
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      customRow.style.display = (btn.dataset.rate === 'custom') ? 'flex' : 'none';
+      if(btn.dataset.rate === 'custom') customRate.focus();
+      recalc();
+    });
+  });
+
+  baseInput.addEventListener('input', recalc);
+  customRate.addEventListener('input', recalc);
+
+  [rTotal, rReferral, rSales].forEach(inp => {
+    inp.addEventListener('input', recalc);
+  });
+  [rReferral, rSales].forEach(inp => {
+    inp.addEventListener('change', () => { clamp(inp); recalc(); });
+  });
+
+  recalc();
+</script>
+</body>
+</html>
