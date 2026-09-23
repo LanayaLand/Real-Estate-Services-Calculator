@@ -17,6 +17,26 @@ const money = value => formatter.format(Math.max(0, Number(value) || 0));
 const number = element => Math.max(0, Number(element.value) || 0);
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+function balancePair(first, second, target, firstMin, firstMax, secondMin, secondMax) {
+  let balancedFirst = clamp(first, firstMin, firstMax);
+  let balancedSecond = clamp(second, secondMin, secondMax);
+  let difference = target - balancedFirst - balancedSecond;
+
+  if (difference > 0) {
+    const firstIncrease = Math.min(difference, firstMax - balancedFirst);
+    balancedFirst += firstIncrease;
+    difference -= firstIncrease;
+    balancedSecond += Math.min(difference, secondMax - balancedSecond);
+  } else if (difference < 0) {
+    const firstDecrease = Math.min(-difference, balancedFirst - firstMin);
+    balancedFirst -= firstDecrease;
+    difference += firstDecrease;
+    balancedSecond -= Math.min(-difference, balancedSecond - secondMin);
+  }
+
+  return [balancedFirst, balancedSecond];
+}
+
 function getRateValues() {
   return {
     broker: number(brokerRate),
@@ -46,6 +66,7 @@ function updateDisplay() {
   document.querySelector('#serviceFee').textContent = money(serviceFee);
   document.querySelector('#serviceFeeCaption').textContent = `${markup}% on ${money(price)} (commission + other fees included)`;
   document.querySelector('#propertyPriceResult').textContent = money(price);
+  document.querySelector('#sellingPriceResult').textContent = money(price + serviceFee);
   document.querySelector('#markupResult').textContent = `${markup}%`;
   document.querySelector('#poolResult').textContent = money(pool);
   document.querySelector('#poolDisplay').textContent = money(pool);
@@ -78,8 +99,15 @@ function rebalance(changedLevel) {
     const targetBroker = clamp(number(brokerRate), minBrokerRate, maxBrokerRate);
     const delta = targetBroker - current.broker;
     broker = targetBroker;
-    salesperson = clamp(current.salesperson - delta / 2, minSalespersonRate, maxSalespersonRate);
-    referral = clamp(current.referral - delta / 2, minReferralRate, maxReferralRate);
+    [salesperson, referral] = balancePair(
+      current.salesperson - delta / 2,
+      current.referral - delta / 2,
+      workingPool - broker,
+      minSalespersonRate,
+      maxSalespersonRate,
+      minReferralRate,
+      maxReferralRate,
+    );
   } else if (changedLevel === 'salesperson') {
     const targetSalesperson = clamp(number(salespersonRate), minSalespersonRate, maxSalespersonRate);
     const delta = targetSalesperson - current.salesperson;
