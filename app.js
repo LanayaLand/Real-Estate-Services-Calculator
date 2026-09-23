@@ -65,74 +65,55 @@ function updateDisplay() {
 }
 
 function rebalance(changedLevel) {
-  const rates = getRateValues();
+  const current = getRateValues();
   const companyShare = fixedCompanyRate;
   const workingPool = 100 - companyShare;
 
+  let broker = clamp(current.broker, minBrokerRate, workingPool);
+  let salesperson = clamp(current.salesperson, minSalespersonRate, maxSalespersonRate);
+  let referral = clamp(current.referral, minReferralRate, maxReferralRate);
+
   if (changedLevel === 'broker') {
-    let broker = clamp(rates.broker, minBrokerRate, 100 - companyShare);
-    let salesperson = clamp(rates.salesperson, minSalespersonRate, maxSalespersonRate);
-    let referral = clamp(rates.referral, minReferralRate, maxReferralRate);
-
-    const currentTotal = broker + salesperson + referral;
-    const delta = currentTotal - workingPool;
-
-    if (delta > 0) {
-      const split = delta / 2;
-      salesperson = clamp(salesperson - split, minSalespersonRate, maxSalespersonRate);
-      referral = clamp(referral - split, minReferralRate, maxReferralRate);
-    }
-
-    const remaining = workingPool - broker - salesperson - referral;
-    if (remaining > 0) {
-      const extra = Math.min(remaining, maxReferralRate - referral);
-      referral = clamp(referral + extra, minReferralRate, maxReferralRate);
-    }
-
-    setRateValues({ broker, salesperson, referral });
+    const targetBroker = clamp(number(brokerRate), minBrokerRate, workingPool);
+    const delta = targetBroker - current.broker;
+    broker = targetBroker;
+    salesperson = clamp(current.salesperson - delta / 2, minSalespersonRate, maxSalespersonRate);
+    referral = clamp(current.referral - delta / 2, minReferralRate, maxReferralRate);
   } else if (changedLevel === 'salesperson') {
-    let broker = clamp(rates.broker, minBrokerRate, 100 - companyShare);
-    let salesperson = clamp(rates.salesperson, minSalespersonRate, maxSalespersonRate);
-    let referral = clamp(rates.referral, minReferralRate, maxReferralRate);
-
-    const currentTotal = broker + salesperson + referral;
-    const delta = currentTotal - workingPool;
-
-    if (delta > 0) {
-      broker = clamp(broker - delta, minBrokerRate, 100 - companyShare);
-    }
-
-    setRateValues({ broker, salesperson, referral });
+    const targetSalesperson = clamp(number(salespersonRate), minSalespersonRate, maxSalespersonRate);
+    const delta = targetSalesperson - current.salesperson;
+    salesperson = targetSalesperson;
+    broker = clamp(current.broker - delta, minBrokerRate, workingPool);
   } else if (changedLevel === 'referral') {
-    let broker = clamp(rates.broker, minBrokerRate, 100 - companyShare);
-    let salesperson = clamp(rates.salesperson, minSalespersonRate, maxSalespersonRate);
-    let referral = clamp(rates.referral, minReferralRate, maxReferralRate);
-
-    const currentTotal = broker + salesperson + referral;
-    const delta = currentTotal - workingPool;
-
-    if (delta > 0) {
-      salesperson = clamp(salesperson - delta, minSalespersonRate, maxSalespersonRate);
-    }
-
-    setRateValues({ broker, salesperson, referral });
+    const targetReferral = clamp(number(referralRate), minReferralRate, maxReferralRate);
+    const delta = targetReferral - current.referral;
+    referral = targetReferral;
+    salesperson = clamp(current.salesperson - delta, minSalespersonRate, maxSalespersonRate);
   } else if (changedLevel === 'pool') {
-    let broker = clamp(rates.broker, minBrokerRate, 100 - companyShare);
-    let salesperson = clamp(rates.salesperson, minSalespersonRate, maxSalespersonRate);
-    let referral = clamp(rates.referral, minReferralRate, maxReferralRate);
-
-    const currentTotal = broker + salesperson + referral;
-    const delta = currentTotal - workingPool;
-
-    if (delta > 0) {
-      const split = delta / 2;
-      salesperson = clamp(salesperson - split, minSalespersonRate, maxSalespersonRate);
-      referral = clamp(referral - split, minReferralRate, maxReferralRate);
-    }
-
-    setRateValues({ broker, salesperson, referral });
+    const targetBroker = clamp(current.broker, minBrokerRate, workingPool);
+    const targetSalesperson = clamp(current.salesperson, minSalespersonRate, maxSalespersonRate);
+    const targetReferral = clamp(current.referral, minReferralRate, maxReferralRate);
+    const total = targetBroker + targetSalesperson + targetReferral;
+    const delta = total - workingPool;
+    salesperson = clamp(targetSalesperson - delta / 2, minSalespersonRate, maxSalespersonRate);
+    referral = clamp(targetReferral - delta / 2, minReferralRate, maxReferralRate);
+    broker = clamp(targetBroker, minBrokerRate, workingPool);
   }
 
+  const total = broker + salesperson + referral;
+  if (Math.abs(total - workingPool) > 0.001) {
+    const difference = workingPool - total;
+    if (changedLevel === 'referral') {
+      salesperson = clamp(salesperson + difference, minSalespersonRate, maxSalespersonRate);
+    } else if (changedLevel === 'salesperson') {
+      broker = clamp(broker + difference, minBrokerRate, workingPool);
+    } else {
+      salesperson = clamp(salesperson + difference / 2, minSalespersonRate, maxSalespersonRate);
+      referral = clamp(referral + difference / 2, minReferralRate, maxReferralRate);
+    }
+  }
+
+  setRateValues({ broker, salesperson, referral });
   updateDisplay();
 }
 
